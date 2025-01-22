@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { Navigation, Coins, LogOut, Briefcase, ShieldCheck } from 'lucide-react';
+import { Navigation, Coins, LogOut, Briefcase, ShieldCheck, Sparkle } from 'lucide-react';
 import { useAuthStore } from './store/authStore';
 import { supabase } from './lib/supabase';
 import ReportForm from './components/ReportForm';
@@ -11,8 +11,10 @@ import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
 
 interface UserProfileData {
+  id: string;
+  email: string;
   points: number;
-  profile_image: string;
+  profile_image: 'src/components/User.jpg';
 }
 
 function App() {
@@ -20,35 +22,42 @@ function App() {
   console.log('AuthStore:', { user, loading, error });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfileData | null>(null);
+  console.log('Before User Profile:', profile);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    try {
+      await supabase.auth.signOut();
+      setProfile(null);
+    } catch (err) {
+      console.error('Error during logout:', err);
+    }
   };
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (user) {
-        console.log('Fetching user profile for:', user.id);
+      if (profile) {
+        console.log('Fetching user profile for:', profile.id);
         const { data, error } = await supabase
           .from('profiles')
-          .select('points, profile_image')
-          .eq('id', user.id)
+          .select('id, points, email')
+          .eq('id', profile.id)
           .single();
-
+        setProfile(profile);
         console.log('Supabase response:', { data, error });
+        console.log('After Fetch User Profile:', profile);
+        console.log('AuthStore:', { user, loading, error });
         if (error) {
           console.error('Error fetching user profile:', error);
         } else {
           console.log('User profile fetched successfully:', data);
-          setProfile(data);
+          setProfile(profile);
         }
       } else {
         console.log('No user logged in');
       }
     };
     fetchUserProfile();
-  }, [user]);
+  }, [profile]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -64,65 +73,90 @@ function App() {
   return (
     <Router>
       <div className=" bg-amber-600 bg-road flex animate-fadeIn">
-        <aside
-          className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r transform transition-transform duration-300 ease-in-out ${
-            mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-          } sm:hidden`}
+      <aside
+  className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r transform transition-transform duration-300 ease-in-out ${
+    mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+  } sm:hidden`}
+>
+  <nav className="flex flex-col h-full p-4 space-y-4">
+    <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-xl font-bold text-gray-900">
+      PotholeReporter
+    </Link>
+    <ul className="space-y-2">
+      <li>
+        <Link
+          to="/"
+          onClick={() => setMobileMenuOpen(false)}
+          className="flex items-center px-4 py-2 rounded-lg hover:bg-gray-100"
         >
-          <nav className="flex flex-col h-full p-4 space-y-4">
-            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-xl font-bold text-gray-900">
-              PotholeReporter
-            </Link>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  to="/"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center px-4 py-2 rounded-lg hover:bg-gray-100"
-                >
-                  <Navigation className="h-5 w-5 mr-2" /> Home
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/report"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center px-4 py-2 rounded-lg hover:bg-gray-100"
-                >
-                  <Briefcase className="h-5 w-5 mr-2" /> Report
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/redeem"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center px-4 py-2 rounded-lg hover:bg-gray-100"
-                >
-                  <Coins className="h-5 w-5 mr-2" /> Redeem
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/admin"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center px-4 py-2 rounded-lg hover:bg-gray-100"
-                >
-                  <ShieldCheck className="h-5 w-5 mr-2" /> Admin
-                </Link>
-              </li>
-              {!loading && user && (
-                <li>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center px-4 py-2 rounded-lg hover:bg-gray-100"
-                  >
-                    <LogOut className="h-5 w-5 mr-2" /> Logout
-                  </button>
-                </li>
-              )}
-            </ul>
-          </nav>
-        </aside>
+          <Navigation className="h-5 w-5 mr-2" /> Home
+        </Link>
+      </li>
+      <li>
+        <Link
+          to="/report"
+          onClick={() => setMobileMenuOpen(false)}
+          className="flex items-center px-4 py-2 rounded-lg hover:bg-gray-100"
+        >
+          <Briefcase className="h-5 w-5 mr-2" /> Report
+        </Link>
+      </li>
+      <li>
+        <Link
+          to="/redeem"
+          onClick={() => setMobileMenuOpen(false)}
+          className="flex items-center px-4 py-2 rounded-lg hover:bg-gray-100"
+        >
+          <Coins className="h-5 w-5 mr-2" /> Redeem
+        </Link>
+      </li>
+      <li>
+        <Link
+          to="/admin"
+          onClick={() => setMobileMenuOpen(false)}
+          className="flex items-center px-4 py-2 rounded-lg hover:bg-gray-100"
+        >
+          <ShieldCheck className="h-5 w-5 mr-2" /> Admin
+        </Link>
+      </li>
+      {profile ? (
+  <>
+    <li className="absolute bottom-0 w-[90%]">
+      <div className="flex justify-between items-center p-3 bg-amber-50 rounded-t-lg text-amber-800">
+        <div className="flex flex-col items-center space-y-1.5">
+          <img
+            src={`https://ui-avatars.com/api/?name=${profile.email.split('@')[0]}&background=random`}
+            alt="Avatar"
+            className="h-8 w-8 rounded-full"
+          />
+          <div className="flex items-center space-x-1">
+            <Sparkle className="inline-block" />
+            <p className="text-xs font-medium">{profile.points} Pothole Points</p>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="flex items-center px-3 py-1.5 rounded-lg hover:bg-gray-100 text-xs"
+        >
+          <LogOut className="h-4 w-4 mr-1.5" /> Logout
+        </button>
+      </div>
+    </li>
+  </>
+) : (
+  <li className="absolute bottom-5 w-[90%]">
+    <Link
+      to="/sign-in"
+      onClick={() => setMobileMenuOpen(false)}
+      className="flex items-center justify-center p-5 bg-amber-50 rounded-t-lg text-amber-800 hover:bg-gray-100 w-full text-xs"
+    >
+      Sign In
+    </Link>
+  </li>
+)}
+    </ul>
+  </nav>
+</aside>
 
         <div className={`fixed inset-0 bg-black bg-opacity-60 z-30 transition-opacity duration-300 ease-in-out ${
           mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -166,19 +200,14 @@ function App() {
                 </Link>
               </nav>
               <div className="flex items-center space-x-4">
-                {!loading && user ? (
+                {profile ? (
                   <>
                     <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-amber-50 text-amber-700">
-                      <img
-                        src={profile?.profile_image || '/components/User.jpg'}
-                        alt="User Profile"
-                        className="h-5 w-5 rounded-full"
-                      />
-                      <Coins />
-                      <span>{profile?.points || 0} Points</span>
+                      <Sparkle />
+                      <span>{profile?.points || 0} Pothole Points</span>
                     </div>
                     <img
-                      src={`https://ui-avatars.com/api/?name=${user.email.split('@')[0]}&background=random`}
+                      src={`https://ui-avatars.com/api/?name=${profile.email.split('@')[0]}&background=random`}
                       alt="Avatar"
                       className="h-10 w-10 rounded-full"
                     />
@@ -204,9 +233,7 @@ function App() {
           {/* Main Routes */}
           <main className="container mx-auto py-8">
             <Routes>
-              <Route path="/" element={<ReportHistory />} />
-              <Route path="/sign-in" element={<SignIn />} />
-              <Route path="/sign-up" element={<SignUp />} />
+              <Route path="/" element={<ReportHistory />} />              
               <Route
                 path="/redeem"
                 element={<PointsRedemption />}
@@ -216,6 +243,8 @@ function App() {
                 element={<ReportForm onSuccess={() => console.log('Report submitted')} />}
               />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/sign-in" element={<SignIn setUser={setProfile} />} />
+              <Route path="/sign-up" element={<SignUp />} />
             </Routes>
           </main>
         </div>
@@ -225,3 +254,4 @@ function App() {
 }
 
 export default App;
+

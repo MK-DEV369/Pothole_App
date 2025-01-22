@@ -29,6 +29,31 @@ const AdminDashboard: React.FC = () => {
     }
   }, []);
 
+  const handleSendToBBMP = useCallback(async (report: PotholeReport) => {
+    try {
+      // Here you would typically send an alert message to BBMP
+      // This could involve making an API call to your backend
+      // For now, we'll just log a message to the console
+      console.log(`Sending location details to BBMP for report ${report.id}`);
+      
+      // You might want to add some UI feedback here, like showing a loading indicator
+      // For example:
+      // setIsSending(true);
+      // await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
+      // setIsSending(false);
+  
+      // If successful, you might want to update the status or add a timestamp
+      // await supabase
+      //   .from('pothole_reports')
+      //   .update({ status: 'sent_to_bbmp', sent_at: new Date() })
+      //   .eq('id', report.id);
+  
+    } catch (error) {
+      console.error('Error sending location to BBMP:', error);
+      // Handle the error appropriately, maybe show an error message to the user
+    }
+  }, []);
+
   const updateStatus = useCallback(async (id: string, status: PotholeReport['status']) => {
     try {
       await supabase
@@ -91,6 +116,10 @@ const AdminDashboard: React.FC = () => {
                   key={report.id}
                   className="bg-white rounded-lg shadow-md p-6 transition-transform duration-200 hover:scale-[1.02] animate-slideIn"
                 >
+                  <div className="mt-4 flex justify-between">
+                    <h3 className="text-lg font-semibold mb-2">Pothole Description:</h3>
+                    <p className="text-gray-700">{report.description}</p>
+                  </div>
                   <div className="flex justify-between items-center mt-4">
                     <span>Status:</span>
                     <div className="flex items-center space-x-2">
@@ -112,6 +141,13 @@ const AdminDashboard: React.FC = () => {
                       className={`px-4 py-2 rounded-full ${report.status === 'in-progress' ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-500'} transition-colors duration-200`}
                     >
                       Mark as Resolved
+                    </button>
+                    <button
+                      onClick={() => handleSendToBBMP(report)}
+                      disabled={report.status !== 'in-progress'}
+                      className={`px-4 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200`}
+                    >
+                      Send BBMP to Location
                     </button>
                   </div>
                 </div>

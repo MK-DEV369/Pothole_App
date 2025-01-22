@@ -50,30 +50,49 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     }
   };
 
-    const getCurrentLocation = async () => {
+  const getCurrentLocation = async () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser.');
       return;
     }
-
+  
     try {
       setLoading(true);
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject);
       });
-
+  
       setLocation({
         lat: position.coords.latitude,
-        lng: position.coords.longitude
+        lng: position.coords.longitude,
       });
+      console.log("Latitude: " + position.coords.latitude, "Longitude: " + position.coords.longitude);
       setError(null);
-    } catch (err) {
-      console.error('Error getting location:', err);
-      setError('Unable to get your location. Please check your device settings.');
+    } catch (err: any) {
+      if (err instanceof GeolocationPositionError) {
+        // Handle specific GeolocationPositionError cases
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            setError('Permission to access location was denied. Please enable location services.');
+            break;
+          case err.POSITION_UNAVAILABLE:
+            setError('Location information is unavailable. Try again later.');
+            break;
+          case err.TIMEOUT:
+            setError('The request to get your location timed out. Please try again.');
+            break;
+          default:
+            setError('An unknown error occurred while retrieving location.');
+        }
+      } else {
+        console.error('Error getting location:', err);
+        setError('Unable to get your location. Please check your device settings.');
+      }
     } finally {
       setLoading(false);
     }
   };
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,9 +139,20 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="p-8 bg-cover bg-fixed bg-center bg-no-repeat bg-blend-overlay animate-fadeIn">
+    <div className="p-8 w-[100%] bg-cover bg-fixed bg-center bg-no-repeat bg-blend-overlay animate-fadeIn">
       <div className="bg-white/80 backdrop-blur-md rounded-lg shadow-lg p-8">
         <h2 className="text-2xl font-bold text-amber-900 mb-6">Report a Pothole</h2>
+            {<div className="bg-red-50 border-l-4 border-orange-400 p-4 rounded animate-fadeIn">
+              <div className="flex-col items-center">
+                <div className='flex items-center'>
+                  <AlertTriangle className="h-5 w-5 text-orange-400" />
+                  <div className='ml-3 text-lg text-orange-700'>𝗡𝗼𝘁𝗲</div>
+                </div>
+                <li className="ml-3 text-orange-700">𝗟𝗼𝘄 𝗦𝗲𝘃𝗲𝗿𝗶𝘁𝘆 Indicates Pothole Dimension is ~ 𝟭 - 𝟭𝟬 𝗰𝗺 (in Size and Depth) where Commuters can travel over.</li>
+                <li className="ml-3 text-orange-700">𝗠𝗲𝗱𝗶𝘂𝗺 𝗦𝗲𝘃𝗲𝗿𝗶𝘁𝘆 Indicates Pothole Dimension is ~ 𝟭𝟭 - 𝟯𝟬 𝗰𝗺 (in Size and Depth) where Commuters will Slow down to or Move Around them.</li>
+                <li className="ml-3 text-orange-700">𝗛𝗶𝗴𝗵 𝗦𝗲𝘃𝗲𝗿𝗶𝘁𝘆 Indicates Pothole Dimension is ~ 𝗠𝗼𝗿𝗲 𝘁𝗵𝗮𝗻 𝟯𝟭 𝗰𝗺 (in Size and Depth) where Commuters Will Definitely Move Around them.</li>
+              </div>
+            </div>}
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded animate-fadeIn">
@@ -134,7 +164,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-amber-900">Description of the Pothole</label>
+            <label className=" pt-3 block text-sm font-medium text-amber-900">Description of the Pothole</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}

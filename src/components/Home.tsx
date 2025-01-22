@@ -1,18 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import type { PotholeReport } from '../types/database.types';
 import { Link } from 'react-router-dom';
-import { Briefcase } from 'lucide-react';
+import { Briefcase, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import Map from './Map';
 
 const ReportHistory: React.FC = () => {
-  const reports = [
-    { id: 1, description: "Large pothole on HSR Layout 2nd Sector", severity: "high", date: "2024-05-01", user_id: 1, latitude: 12.925370, longitude: 77.616423, status: "in-progress" },
-    { id: 2, description: "Small crack on Puneeth-Rajkumar Main Road", severity: "low", date: "2024-05-02", user_id: 2, latitude: 12.935933, longitude: 77.535420, status: "reported" },
-    { id: 3, description: "Deep pothole near Puttenahalli", severity: "medium", date: "2024-05-03", user_id: 3, latitude: 12.892166, longitude: 77.581895, status: "resolved" },
-  ];
+  const [reports, setReports] = useState<PotholeReport[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  const fetchReports = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pothole_reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setReports(data || []);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen overflow-hidden">
-      <h1 className="text-xl text-center font-semibold mb-4">Potholes Reported:</h1>
+      <h1 className="text-xl text-center font-semibold mb-4">Potholes Reported</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="md:col-span-2 lg:col-span-2">
@@ -23,7 +41,7 @@ const ReportHistory: React.FC = () => {
                   <div className={`w-4 h-4 rounded-full mr-2 ${report.severity === 'high' ? 'bg-red-500' : report.severity === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
                   <div className="flex flex-col">
                     <p className="font-semibold text-base">{report.description}</p>
-                    <p className="text-xs text-gray-500">Reported on: {report.date}</p>
+                    <p className="text-xs text-gray-500">Reported on: {new Date(report.created_at).toLocaleString()}</p>
                   </div>
                 </div>
               </li>
