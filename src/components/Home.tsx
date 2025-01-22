@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { PotholeReport } from '../types/database.types';
 import { Link } from 'react-router-dom';
-import { Briefcase, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
+import { Briefcase } from 'lucide-react';
 import Map from './Map';
 
 const ReportHistory: React.FC = () => {
@@ -35,7 +35,7 @@ const ReportHistory: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="md:col-span-2 lg:col-span-2">
           <ul className="space-y-4">
-            {reports.map((report) => (
+            {reports.slice(0,4).map((report) => (
               <li key={report.id} className="border-b pb-3">
                 <div className="flex items-start mb-1">
                   <div className={`w-4 h-4 rounded-full mr-2 ${report.severity === 'high' ? 'bg-red-500' : report.severity === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`}></div>

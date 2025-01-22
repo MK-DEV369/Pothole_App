@@ -2,6 +2,7 @@ import React, { useState, useRef} from 'react';
 import { Camera, Upload, MapPin, AlertTriangle } from 'lucide-react';
 import * as tf from '@tensorflow/tfjs';
 import { createClient } from '@supabase/supabase-js';
+import { useAuthStore } from '../store/authStore';
 
 interface ReportFormProps {
   onSuccess: () => void;
@@ -20,6 +21,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const { user } = useAuthStore();
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,7 +72,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       setError(null);
     } catch (err: any) {
       if (err instanceof GeolocationPositionError) {
-        // Handle specific GeolocationPositionError cases
         switch (err.code) {
           case err.PERMISSION_DENIED:
             setError('Permission to access location was denied. Please enable location services.');
@@ -115,6 +116,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       const { error: reportError } = await supabase
         .from('pothole_reports')
         .insert({
+          user_id: user?.id,
           description,
           severity,
           image_url: imageUrl,
