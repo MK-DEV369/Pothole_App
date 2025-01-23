@@ -71,9 +71,10 @@ const PointsRedemption: React.FC = () => {
         <h3 className="text-lg font-semibold text-amber-800 mb-2">How it works</h3>
         <ul className="list-disc list-inside text-amber-700 space-y-2">
           <li>Every 10 points = ₹1</li>
-          <li>Minimum redemption: 100 points (₹10)</li>
+          <li>Minimum redemption: 100 Pothole Points (₹10)</li>
           <li>Points are redeemed in multiples of 100</li>
           <li>Money will be transferred to your UPI ID</li>
+          <li>If you Fix a Pothole yourself and #-Tag and post it in any Social Media, you immediately gain 100 Pothole Points</li>
         </ul>
       </div>
 

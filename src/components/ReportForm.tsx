@@ -17,11 +17,13 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const [severity, setSeverity] = useState<'low' | 'medium' | 'high'>('medium');
   const [image, setImage] = useState<File | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [loadingmap, setLoadingmap] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const { user } = useAuthStore();
+  const authStore = useAuthStore();
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,7 +61,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     }
   
     try {
-      setLoading(true);
+      setLoadingmap(true);
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject);
       });
@@ -90,7 +92,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         setError('Unable to get your location. Please check your device settings.');
       }
     } finally {
-      setLoading(false);
+      setLoadingmap(false);
     }
   };
   
@@ -99,7 +101,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+  
     try {
       if (!image || !location) {
         throw new Error('Please provide both an image and location');
@@ -107,11 +109,12 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       const { data: imageData, error: imageError } = await supabase.storage
         .from('pothole-images')
         .upload(`${Date.now()}-${image.name}`, image);
-
-        if (imageError) {
-          console.error('Image upload error:', imageError.message);
-          throw imageError;
-        }
+  
+      if (imageError) {
+        console.error('Image upload error:', imageError.message);
+        throw imageError;
+      }
+  
       const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/pothole-images/${imageData.path}`;
       const { error: reportError } = await supabase
         .from('pothole_reports')
@@ -124,9 +127,29 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
           longitude: location.lng,
           status: 'reported'
         });
-      alert("Report Successfully Submitted!!!");
-      if (reportError) throw reportError;
-
+  
+        if (user && !user.email.startsWith('anonymous_')) {
+          const newPoints = (user.points || 0) + 1;
+          const { error: pointsError } = await supabase
+            .from('profiles')
+            .update({ points: newPoints })
+            .eq('id', user.id);
+    
+          if (pointsError) {
+            console.error('Error updating points:', pointsError.message);
+            throw pointsError;
+          }
+          authStore.updateUser({ ...user, points: newPoints });
+          alert(`Report Successfully Submitted! You now have ${newPoints} points.`);
+        } else {
+          alert("Report Successfully Submitted! However, anonymous users don't earn points.");
+        }
+  
+        if (reportError) {
+          console.error('Report submission error:', reportError.message);
+          throw reportError;
+        }
+  
       onSuccess?.();
       setDescription('');
       setSeverity('medium');
@@ -224,11 +247,11 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
               <button
                 type="button"
                 onClick={getCurrentLocation}
-                disabled={loading}
+                disabled={loadingmap}
                 className="w-full inline-flex items-center px-4 py-2 border border-amber-300 rounded-md shadow-sm text-sm font-medium text-amber-700 bg-white hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-300"
               >
                 <MapPin className="h-5 w-5 mr-2" />
-                {loading ? 'Getting Location...' : location ? 'Location Captured' : 'Get Location'}
+                {loadingmap ? 'Getting Location...' : location ? 'Location Captured' : 'Get Location'}
               </button>
             </div>
             </div>
